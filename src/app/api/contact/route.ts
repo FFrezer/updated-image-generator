@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
+interface ContactRequest {
+  name: string;
+  email: string;
+  message: string;
+}
+
 export async function POST(req: Request) {
   try {
-    const { name, email, message } = await req.json();
+    const { name, email, message }: ContactRequest = await req.json();
 
     if (!name || !email || !message) {
       return NextResponse.json(
@@ -15,7 +21,7 @@ export async function POST(req: Request) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465, // true for 465
+      secure: Number(process.env.SMTP_PORT) === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -23,7 +29,6 @@ export async function POST(req: Request) {
       tls: { rejectUnauthorized: false },
     });
 
-    // Optional: test connection
     await transporter.verify();
 
     await transporter.sendMail({
@@ -39,10 +44,10 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Contact API Error:", err);
     return NextResponse.json(
-      { error: "Failed to send email. Please try again later." },
+      { error: err instanceof Error ? err.message : "Failed to send email." },
       { status: 500 }
     );
   }

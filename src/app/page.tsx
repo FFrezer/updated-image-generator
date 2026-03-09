@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { HiMenu, HiX } from "react-icons/hi"; // Hamburger and close icons
+import { HiMenu, HiX } from "react-icons/hi";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { motion } from "framer-motion";
 
@@ -43,15 +43,21 @@ export default function Home() {
         body: JSON.stringify({ prompt: finalPrompt }),
       });
 
-      const data = await res.json();
+      const data: { url?: string; error?: string } = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Failed to generate image");
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Failed to generate image");
+      }
 
       setImageUrl(data.url);
-      setHistory((prev) => [data.url, ...prev]);
-    } catch (err: any) {
+      setHistory((prev) => data.url ? [data.url, ...prev] : prev);
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "Image generation failed.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Image generation failed.");
+      }
     } finally {
       setLoading(false);
     }
@@ -77,14 +83,22 @@ export default function Home() {
     }
   };
 
+  // Handle Enter key for prompt input
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-black text-white">
-  <ParticlesBackground />
+      <ParticlesBackground />
+      
       {/* Navbar */}
-     <header className="w-full sticky top-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/10 py-4 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-center">
+      <header className="w-full sticky top-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/10 py-4 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-center">
         <div className="flex justify-between w-full sm:w-auto items-center">
           <h1 className="text-2xl font-bold text-white">Image Generator</h1>
-          
           <button
             className="sm:hidden text-2xl text-indigo-600"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -99,7 +113,7 @@ export default function Home() {
             menuOpen ? "flex" : "hidden sm:flex"
           }`}
         >
-          <Link href="/" className="hover:text-indigo-600" onClick={() => setMenuOpen(false)}>Home</Link>
+          <Link href="/" onClick={() => setMenuOpen(false)} className="hover:text-indigo-600">Home</Link>
           <a
             href="#generate"
             onClick={(e) => {
@@ -111,73 +125,61 @@ export default function Home() {
           >
             Generate
           </a>
-          <a href="#features" className="hover:text-indigo-600" onClick={() => setMenuOpen(false)}>Features</a>
-          <Link
-            href="/contact"
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            onClick={() => setMenuOpen(false)}
-          >
+          <a href="#features" onClick={() => setMenuOpen(false)} className="hover:text-indigo-600">Features</a>
+          <Link href="/contact" onClick={() => setMenuOpen(false)} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
             Contact
           </Link>
         </nav>
       </header>
 
-      {/* Hero */}
-     <section className="text-center py-28 px-6">
+      {/* Hero Section */}
+      <section className="text-center py-28 px-6">
+        <motion.h1
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-5xl sm:text-6xl font-extrabold mb-6 bg-gradient-to-r from-indigo-400 to-purple-500 text-transparent bg-clip-text"
+        >
+          Create AI Images Instantly
+        </motion.h1>
 
-<motion.h1
- initial={{ opacity: 0, y: 40 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ duration: 0.8 }}
- className="text-5xl sm:text-6xl font-extrabold mb-6 bg-gradient-to-r from-indigo-400 to-purple-500 text-transparent bg-clip-text"
->
-Create AI Images Instantly
-</motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-gray-300 max-w-2xl mx-auto mb-10"
+        >
+          Turn your imagination into stunning visuals with AI-powered image generation.
+        </motion.p>
 
-<motion.p
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- transition={{ delay: 0.4 }}
- className="text-gray-300 max-w-2xl mx-auto mb-10"
->
-Turn your imagination into stunning visuals with AI-powered image generation.
-</motion.p>
-
-<motion.button
- whileHover={{ scale: 1.1 }}
- whileTap={{ scale: 0.95 }}
- className="px-10 py-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg"
->
-Start Generating
-</motion.button>
-
-</section>
-
-      {/* Features */}
-      <section
-        id="features"
-        className="py-1 px-4 sm:px-8 max-w-6xl mx-auto grid sm:grid-cols-3 gap-6 sm:gap-8 text-center"
-      >
-        <div className="p-6 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-          <h3 className="text-xl font-semibold mb-2">Instant Results</h3>
-          <p className="text-x1 font-semibold mb-2">Generate High-quality Images within seconds</p>
-        </div>
-        <div className="p-6 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-          <h3 className="text-xl font-semibold mb-2">Creative Prompts</h3>
-          <p className="text-x1 font-semibold mb-2">Use prompts and styles to guide your visuals.</p>
-        </div>
-        <div className="p-6 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-          <h3 className="text-xl font-semibold mb-2">Download Images</h3>
-          <p className="text-x1 font-semibold mb-2">Save generated images directly to your device.</p>
-        
-        </div>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="px-10 py-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg"
+        >
+          Start Generating
+        </motion.button>
       </section>
 
-      {/* Generator */}
-      <section id="generate" ref={generateRef} className="flex flex-col items-center py-12 px- sm:px- w-full">
+      {/* Features */}
+      <section id="features" className="py-1 px-4 sm:px-8 max-w-6xl mx-auto grid sm:grid-cols-3 gap-6 sm:gap-8 text-center">
+        {["Instant Results", "Creative Prompts", "Download Images"].map((title, i) => (
+          <div key={i} className="p-6 rounded-xl bg-white/10 backdrop-blur border border-white/10">
+            <h3 className="text-xl font-semibold mb-2">{title}</h3>
+            <p className="text-x1 font-semibold mb-2">
+              {title === "Instant Results" && "Generate High-quality Images within seconds"}
+              {title === "Creative Prompts" && "Use prompts and styles to guide your visuals."}
+              {title === "Download Images" && "Save generated images directly to your device."}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      {/* Generator Section */}
+      <section id="generate" ref={generateRef} className="flex flex-col items-center py-12 px-4 w-full sm:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-indigo-600 mb-6">Create your Image</h2>
 
-        {/* Prompt Input */}
+        {/* Prompt input */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4 w-full max-w-xl">
           <input
             type="text"
@@ -185,16 +187,16 @@ Start Generating
             value={prompt}
             disabled={loading}
             onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleGenerate(); }}
+            onKeyDown={handleKeyDown}
             className="px-4 py-2 border rounded-lg w-full"
           />
-         <button
-  onClick={handleGenerate}
-  disabled={loading}
- className="px-6 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:opacity-90"
->
-  {loading ? "Generating..." : "Generate Image"}
-</button>
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className="px-6 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:opacity-90"
+          >
+            {loading ? "Generating..." : "Generate Image"}
+          </button>
         </div>
 
         {/* Style selector */}
@@ -217,13 +219,7 @@ Start Generating
         {/* Generated Image */}
         {imageUrl && (
           <div className="mt-6 text-center w-full max-w-xl">
-            <Image
-              src={imageUrl}
-              alt="Generated"
-              width={800}
-              height={600}
-              className="rounded-lg shadow w-full h-auto"
-            />
+            <Image src={imageUrl} alt="Generated" width={800} height={600} className="rounded-lg shadow w-full h-auto" />
             <button
               onClick={handleDownload}
               className="mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 w-full sm:w-auto"
@@ -240,14 +236,7 @@ Start Generating
           <h3 className="text-2xl font-bold mb-6 text-center">Generated History</h3>
           <div className="columns-2 sm:columns-3 md:columns-4 gap-4 space-y-4">
             {history.map((img, i) => (
-              <Image
-                key={i}
-                src={img}
-                alt={`history-${i}`}
-                width={300}
-                height={200}
-                className="rounded-lg shadow w-full h-auto"
-              />
+              <Image key={i} src={img} alt={`history-${i}`} width={300} height={200} className="rounded-lg shadow w-full h-auto" />
             ))}
           </div>
         </section>

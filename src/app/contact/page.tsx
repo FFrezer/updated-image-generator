@@ -3,6 +3,11 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 
+interface ContactResponse {
+  success?: boolean;
+  error?: string;
+}
+
 export default function Contact() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,11 +27,10 @@ export default function Contact() {
         body: JSON.stringify({ name, email, message }),
       });
 
-      const data = await res.json();
+      const data: ContactResponse = await res.json();
 
       if (!res.ok) {
         setStatus(data.error || "Failed to send message.");
-        setLoading(false);
         return;
       }
 
@@ -34,9 +38,10 @@ export default function Contact() {
       setName("");
       setEmail("");
       setMessage("");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setStatus("Error sending message. Try again later.");
+      if (err instanceof Error) setStatus(err.message);
+      else setStatus("Error sending message. Try again later.");
     } finally {
       setLoading(false);
     }
@@ -51,7 +56,6 @@ export default function Contact() {
         dark:from-slate-900 dark:via-slate-800 dark:to-slate-700
         transition-colors"
       >
-
         <h1 className="text-4xl font-bold text-indigo-600 mb-6">
           Contact Us
         </h1>
